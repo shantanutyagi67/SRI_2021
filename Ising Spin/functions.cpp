@@ -1,6 +1,8 @@
 #include "header.h"
 #include <cmath>
 #include <stdexcept>
+#include <omp.h>
+
 
 /* Define our constructor. Pass Args to this to create an instance of Ising Model Class */
 /* Note: Its a constructor because there's no return type and method name 'Ising_Model' matches class name. */
@@ -8,7 +10,7 @@
 Ising_Model::Ising_Model(int n_rows, int n_cols, double T, long N_steps){
 
 	current_step = 0; // index for current step
-	states = std::vector<unsigned long long>(N_steps,0); // initialize 1d array to hold sequence of integer states
+	states = std::vector<int>(N_steps/500,0); // initialize 1d array to hold sequence of integer states
 	spin_matrix = std::vector<std::vector<int>>(n_rows,std::vector<int>(n_cols,0)); // initialize 2d matrix with null spins
 	num_rows = n_rows;
 	num_cols = n_cols;
@@ -19,6 +21,7 @@ Ising_Model::Ising_Model(int n_rows, int n_cols, double T, long N_steps){
 	std::random_device rd; // used to obtain seed for random number engine
 	std::mt19937 gen(rd()); // standard mersenne_twister_engine seeded with rd()
 	std::uniform_int_distribution<> uni_dis(0,1);
+	
 	for(int i=0;i<num_rows;i++){
 		for(int j=0;j<num_cols;j++){
 			int rand_int = uni_dis(gen);         // draw random int either 0 or 1
@@ -30,7 +33,7 @@ Ising_Model::Ising_Model(int n_rows, int n_cols, double T, long N_steps){
 		}
 	}
 
-	states[current_step] = get_state(spin_matrix,num_rows,num_cols);
+	//states[current_step] = get_state(spin_matrix,num_rows,num_cols);
 
 }
 
@@ -39,13 +42,16 @@ void Ising_Model::evolve(std::ostream &time_series){
 	int energy = 0;  // integer to hold the local energy value
 	int row_index,col_index;
 	int left_nn,right_nn,down_nn,up_nn; // integers to hold the values of the nearest neighbors
-
+	
 	std::random_device rd; // used to obtain seed for random number engine
 	std::mt19937 gen(rd()); // standard mersenne_twister_engine seeded with rd()
 	std::uniform_real_distribution<> real_dis(0,1); // real distribution to draw from (0 to 1)
 	std::uniform_int_distribution<> uni_dis(0,num_rows-1); // uniform distribution to draw from (0 to n_rows-1 inclusive)
-
+	
+	#pragma omp parallel
+	{
 	//For each step get the spin matrix and convert to integer-named state
+	#pragma omp for
 	for(int i=1;i<=num_steps;i++){
 		//time_series << i << "\n";
 		current_step = i;
@@ -92,10 +98,12 @@ void Ising_Model::evolve(std::ostream &time_series){
 				}
 			}
 		}	
-
-		states[current_step] = get_state(spin_matrix,num_rows,num_cols);
+		if (current_step%500==0){
+			//states[current_step/500] = get_state(spin_matrix,num_rows,num_cols);
+		}
 
 	}
+	}// parallel region ends
 }
 
 // This method evolves but does not write spins to file
@@ -110,6 +118,9 @@ void Ising_Model::evolve(void){
 	std::uniform_int_distribution<> uni_dis(0,num_rows-1); // uniform distribution to draw from (0 to n_rows-1 inclusive)
 
 	//For each step get the spin matrix and convert to integer-named state
+	#pragma omp parallel
+	{
+	#pragma omp for
 	for(int i=1;i<=num_steps;i++){
 		//time_series << i << "\n";
 		current_step = i;
@@ -146,9 +157,12 @@ void Ising_Model::evolve(void){
 			}
 		}
 
-		states[current_step] = get_state(spin_matrix,num_rows,num_cols);
+		if (current_step%500==0){
+			//states[current_step/500] = get_state(spin_matrix,num_rows,num_cols);
+		}
 
 	}
+	}// parallel region ends
 }
 
 
@@ -175,22 +189,17 @@ std::ostream &operator<<(std::ostream &out, std::vector<std::vector<int>> spin_m
 }
 
 /* Function to convert 2d matrix into unique integer identifier via binary conversion */
-unsigned long long get_state(std::vector<std::vector<int>> spin_matrix, int num_rows, int num_cols){
+double get_state(std::vector<std::vector<int>> spin_matrix, int num_rows, int num_cols){
 
-	double power = 0.;  // each node represents a power of 2
-	unsigned long long state = 0;  // this will be the identifier of our state
+	double state = 0;  // this will be the identifier of our state
 
 	for(int i=0;i<num_rows;i++){
 		for(int j=0;j<num_cols;j++){
-			if(spin_matrix[i][j] == 1){
-				state = state + std::pow(2.,power);
-				//std::cout << "state: " << state << "\t";
-			}
-			power = power + 1.;
+			state+=spin_matrix[i][j];
 		}
 	}
 
-	return state;
+	return abs(state/(double)(num_rows*num_cols));
 }
 
 

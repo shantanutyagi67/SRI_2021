@@ -9,7 +9,7 @@ struct Ising_Model
 {
 	Ising_Model(int n_rows, int n_cols, double T, long N_steps);  // signature for constructor, construct instance of class
 
-	std::vector<unsigned long long> states; // 1d array to hold the name of all states
+	std::vector<int> states; // 1d array to hold the name of all states
 	std::vector<std::vector<int>> spin_matrix;	// 2d array for the current spin matrix
 	long current_step; // integer denoting the number of steps taken
 	int num_rows; // number of rows
@@ -27,7 +27,7 @@ struct Ising_Model
 std::ostream &operator<<(std::ostream &out, std::vector<std::vector<int>> spin_matrix);
 
 /* Other Functions */
-unsigned long long get_state(std::vector<std::vector<int>> spin_matrix, int num_rows, int num_cols);
+double get_state(std::vector<std::vector<int>> spin_matrix, int num_rows, int num_cols);
 
 //HEADER
 // std::vector<std::vector<double>> get_TPM(std::vector<unsigned long long> states); // relevant only for EI.cpp 

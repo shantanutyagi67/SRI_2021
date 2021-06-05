@@ -1,0 +1,2 @@
+n_rows	n_cols	T/Tc	Steps(K)	Time	Magnetisation	
+128,128,0.55,100000,172.627,0.505725,
