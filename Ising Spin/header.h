@@ -7,7 +7,7 @@
 /* Structure to hold the current properties of the Ising Model */
 struct Ising_Model
 {
-	Ising_Model(int n_rows, int n_cols, double T, long N_steps);  // signature for constructor, construct instance of class
+	Ising_Model(int n_rows, int n_cols, double T, long N_steps, int skip);  // signature for constructor, construct instance of class
 
 	std::vector<int> states; // 1d array to hold the name of all states
 	std::vector<std::vector<int>> spin_matrix;	// 2d array for the current spin matrix
@@ -16,7 +16,7 @@ struct Ising_Model
 	int num_cols; //number of columns
 	long num_steps; // number of simulation steps
 	double temp; // temperature of the model
-
+	int step;
 	/* Define Methods */
 	void evolve(std::ostream &time_series);
 	void evolve(void);

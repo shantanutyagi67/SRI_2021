@@ -2,15 +2,16 @@
 #include <cmath>
 #include <stdexcept>
 #include <omp.h>
-
+using namespace std;
 
 /* Define our constructor. Pass Args to this to create an instance of Ising Model Class */
 /* Note: Its a constructor because there's no return type and method name 'Ising_Model' matches class name. */
 
-Ising_Model::Ising_Model(int n_rows, int n_cols, double T, long N_steps){
-
+Ising_Model::Ising_Model(int n_rows, int n_cols, double T, long N_steps, int skip){
+	
+	step = skip;
 	current_step = 0; // index for current step
-	states = std::vector<int>(N_steps/500,0); // initialize 1d array to hold sequence of integer states
+	states = std::vector<int>(N_steps/step,0); // initialize 1d array to hold sequence of integer states
 	spin_matrix = std::vector<std::vector<int>>(n_rows,std::vector<int>(n_cols,0)); // initialize 2d matrix with null spins
 	num_rows = n_rows;
 	num_cols = n_cols;
@@ -98,9 +99,9 @@ void Ising_Model::evolve(std::ostream &time_series){
 				}
 			}
 		}	
-		if (current_step%500==0){
+		//if (current_step%500==0){
 			//states[current_step/500] = get_state(spin_matrix,num_rows,num_cols);
-		}
+		//}
 
 	}
 	}// parallel region ends
@@ -116,15 +117,16 @@ void Ising_Model::evolve(void){
 	std::mt19937 gen(rd()); // standard mersenne_twister_engine seeded with rd()
 	std::uniform_real_distribution<> real_dis(0,1); // real distribution to draw from (0 to 1)
 	std::uniform_int_distribution<> uni_dis(0,num_rows-1); // uniform distribution to draw from (0 to n_rows-1 inclusive)
-
+	//cout<<"test4"<<endl;
 	//For each step get the spin matrix and convert to integer-named state
 	#pragma omp parallel
 	{
 	#pragma omp for
-	for(int i=1;i<=num_steps;i++){
+	for(long i=0;i<num_steps;i++){
 		//time_series << i << "\n";
-		current_step = i;
-
+		current_step = i+1;
+		//if(i%100000==0)
+		//cout<<"test5"<<endl;
 		/* Choose a node at random */
 		col_index = uni_dis(gen); // random int between 0 and n_cols-1
 		row_index = uni_dis(gen); // random int between 0 and n_rows-1
@@ -156,9 +158,8 @@ void Ising_Model::evolve(void){
 				spin_matrix[row_index][col_index] = -1*spin_matrix[row_index][col_index];
 			}
 		}
-
-		if (current_step%500==0){
-			//states[current_step/500] = get_state(spin_matrix,num_rows,num_cols);
+		if (i%step==0){
+			states[i/step] = get_state(spin_matrix,num_rows,num_cols);
 		}
 
 	}
